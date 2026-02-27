@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dyson Price Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 30px; }
+    h1 { color: #222; margin-bottom: 20px; }
+    .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    select, button { padding: 10px 16px; border-radius: 6px; font-size: 1em; border: 1px solid #ccc; }
+    button { background: #0078d4; color: white; border: none; cursor: pointer; }
+    button:hover { background: #005fa3; }
+    #status { margin-bottom: 15px; color: #555; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    th { background: #0078d4; color: white; padding: 12px 16px; text-align: left; }
+    td { padding: 12px 16px; border-bottom: 1px solid #eee; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9f9f9; }
+    .site-target { color: #cc0000; font-weight: bold; }
+    .site-ebay { color: #e53238; font-weight: bold; }
+    .site-bestbuy { color: #0046be; font-weight: bold; }
+    .site-walmart { color: #0071ce; font-weight: bold; }
+    .price { color: #2d8a4e; font-weight: bold; font-size: 1.1em; }
+  </style>
+</head>
+<body>
+  <h1>🧹 Dyson Vacuum Price Tracker</h1>
+  <div class="controls">
+    <select id="siteFilter" onchange="render()">
+      <option value="all">All Sites</option>
+      <option value="Target">Target</option>
+      <option value="eBay">eBay</option>
+      <option value="Best Buy">Best Buy</option>
+      <option value="Walmart">Walmart</option>
+    </select>
+    <select id="sortFilter" onchange="render()">
+      <option value="asc">Price: Low to High</option>
+      <option value="desc">Price: High to Low</option>
+      <option value="site">Sort by Site</option>
+    </select>
+  </div>
+  <div id="status"></div>
+  <table>
+    <thead>
+      <tr><th>Site</th><th>Price</th><th>Link</th><th>Scraped At</th></tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <script>
+    let data = [];
+
+    // Load data from prices.json
+    fetch("prices.json")
+      .then(response => response.json())
+      .then(jsonData => {
+        data = jsonData;
+        render();
+      })
+      .catch(error => {
+        console.error("Error loading prices.json:", error);
+        document.getElementById("status").textContent = "Error: Could not load prices.json";
+      });
+
+    const fallbackData = [
+  {
+    "site": "Target",
+    "price": "$300",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925554"
+  },
+  {
+    "site": "Target",
+    "price": "$5002",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925564"
+  },
+  {
+    "site": "Target",
+    "price": "$439.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925566"
+  },
+  {
+    "site": "Target",
+    "price": "$499.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925567"
+  },
+  {
+    "site": "Target",
+    "price": "$469.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925568"
+  },
+  {
+    "site": "Target",
+    "price": "$629.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925569"
+  },
+  {
+    "site": "Target",
+    "price": "$649.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925570"
+  },
+  {
+    "site": "Target",
+    "price": "$849.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925570"
+  },
+  {
+    "site": "Target",
+    "price": "$399.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925571"
+  },
+  {
+    "site": "Target",
+    "price": "$549.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925572"
+  },
+  {
+    "site": "Target",
+    "price": "$599.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925573"
+  },
+  {
+    "site": "Target",
+    "price": "$349.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925573"
+  },
+  {
+    "site": "Target",
+    "price": "$539.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925574"
+  },
+  {
+    "site": "Target",
+    "price": "$1,049.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925575"
+  },
+  {
+    "site": "Target",
+    "price": "$23.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925576"
+  },
+  {
+    "site": "Target",
+    "price": "$449.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925576"
+  },
+  {
+    "site": "Target",
+    "price": "$249.95",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925577"
+  },
+  {
+    "site": "Target",
+    "price": "$799.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925578"
+  },
+  {
+    "site": "Target",
+    "price": "$279.95",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925579"
+  },
+  {
+    "site": "Target",
+    "price": "$499.00",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925580"
+  },
+  {
+    "site": "Target",
+    "price": "$659.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925581"
+  },
+  {
+    "site": "Target",
+    "price": "$24.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925581"
+  },
+  {
+    "site": "Target",
+    "price": "$249.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925582"
+  },
+  {
+    "site": "Target",
+    "price": "$199.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925583"
+  },
+  {
+    "site": "Target",
+    "price": "$279.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925583"
+  },
+  {
+    "site": "Target",
+    "price": "$119.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925585"
+  },
+  {
+    "site": "Target",
+    "price": "$149.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925585"
+  },
+  {
+    "site": "Target",
+    "price": "$129.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925586"
+  },
+  {
+    "site": "Target",
+    "price": "$179.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925587"
+  },
+  {
+    "site": "Target",
+    "price": "$79.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925590"
+  },
+  {
+    "site": "Target",
+    "price": "$89.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925590"
+  },
+  {
+    "site": "Target",
+    "price": "$269.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925591"
+  },
+  {
+    "site": "Target",
+    "price": "$11.69",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925592"
+  },
+  {
+    "site": "Target",
+    "price": "$12.89",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925593"
+  },
+  {
+    "site": "Target",
+    "price": "$299.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925593"
+  },
+  {
+    "site": "Target",
+    "price": "$379.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925594"
+  },
+  {
+    "site": "Target",
+    "price": "$54.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925595"
+  },
+  {
+    "site": "Target",
+    "price": "$12.79",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925595"
+  },
+  {
+    "site": "Target",
+    "price": "$189.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925596"
+  },
+  {
+    "site": "Target",
+    "price": "$40.00",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925597"
+  },
+  {
+    "site": "Target",
+    "price": "$250",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925598"
+  },
+  {
+    "site": "Target",
+    "price": "$55.00",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925599"
+  },
+  {
+    "site": "Target",
+    "price": "$18",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925600"
+  },
+  {
+    "site": "Target",
+    "price": "$29.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925600"
+  },
+  {
+    "site": "Target",
+    "price": "$19.99",
+    "url": "https://www.target.com/s?searchTerm=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:18.925601"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$649.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920965"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$200",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920974"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$849.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920975"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$36.12",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920976"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$349.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920977"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$190",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920978"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$539.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920979"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$29.17",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920980"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$499.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920981"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$130",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920982"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$629.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920983"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$41.67",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920983"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$1,049.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920985"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$58.34",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920985"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$25",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920986"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$49.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920988"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$50",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920988"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$74.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920989"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$150",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920991"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$199.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920991"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$249.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920992"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$250",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920993"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$500",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920994"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$749.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920995"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$750",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920996"
+  },
+  {
+    "site": "Best Buy",
+    "price": "$999.99",
+    "url": "https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum",
+    "timestamp": "2026-02-26T01:06:57.920996"
+  },
+  {
+    "site": "eBay",
+    "price": "$1500",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216976"
+  },
+  {
+    "site": "eBay",
+    "price": "$20.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216988"
+  },
+  {
+    "site": "eBay",
+    "price": "$249.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216990"
+  },
+  {
+    "site": "eBay",
+    "price": "$549.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216991"
+  },
+  {
+    "site": "eBay",
+    "price": "$179.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216992"
+  },
+  {
+    "site": "eBay",
+    "price": "$539.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216993"
+  },
+  {
+    "site": "eBay",
+    "price": "$111.11",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216994"
+  },
+  {
+    "site": "eBay",
+    "price": "$187.50",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216995"
+  },
+  {
+    "site": "eBay",
+    "price": "$73.50",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216996"
+  },
+  {
+    "site": "eBay",
+    "price": "$242.50",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216997"
+  },
+  {
+    "site": "eBay",
+    "price": "$270.07",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216998"
+  },
+  {
+    "site": "eBay",
+    "price": "$224.50",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216998"
+  },
+  {
+    "site": "eBay",
+    "price": "$162.50",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.216999"
+  },
+  {
+    "site": "eBay",
+    "price": "$111.50",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217000"
+  },
+  {
+    "site": "eBay",
+    "price": "$319.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217001"
+  },
+  {
+    "site": "eBay",
+    "price": "$849.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217001"
+  },
+  {
+    "site": "eBay",
+    "price": "$199.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217002"
+  },
+  {
+    "site": "eBay",
+    "price": "$599.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217003"
+  },
+  {
+    "site": "eBay",
+    "price": "$159.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217004"
+  },
+  {
+    "site": "eBay",
+    "price": "$499.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217005"
+  },
+  {
+    "site": "eBay",
+    "price": "$149.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217007"
+  },
+  {
+    "site": "eBay",
+    "price": "$469.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217008"
+  },
+  {
+    "site": "eBay",
+    "price": "$349.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217009"
+  },
+  {
+    "site": "eBay",
+    "price": "$749.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217010"
+  },
+  {
+    "site": "eBay",
+    "price": "$169.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217010"
+  },
+  {
+    "site": "eBay",
+    "price": "$419.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217011"
+  },
+  {
+    "site": "eBay",
+    "price": "$799.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217012"
+  },
+  {
+    "site": "eBay",
+    "price": "$319.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217013"
+  },
+  {
+    "site": "eBay",
+    "price": "$749.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217014"
+  },
+  {
+    "site": "eBay",
+    "price": "$289.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217015"
+  },
+  {
+    "site": "eBay",
+    "price": "$399.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217016"
+  },
+  {
+    "site": "eBay",
+    "price": "$729.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217016"
+  },
+  {
+    "site": "eBay",
+    "price": "$299.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217017"
+  },
+  {
+    "site": "eBay",
+    "price": "$329.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217018"
+  },
+  {
+    "site": "eBay",
+    "price": "$279.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217020"
+  },
+  {
+    "site": "eBay",
+    "price": "$174.85",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217021"
+  },
+  {
+    "site": "eBay",
+    "price": "$29.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217022"
+  },
+  {
+    "site": "eBay",
+    "price": "$264.90",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217022"
+  },
+  {
+    "site": "eBay",
+    "price": "$49.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217024"
+  },
+  {
+    "site": "eBay",
+    "price": "$189.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217024"
+  },
+  {
+    "site": "eBay",
+    "price": "$26.25",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217025"
+  },
+  {
+    "site": "eBay",
+    "price": "$100.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217026"
+  },
+  {
+    "site": "eBay",
+    "price": "$18.22",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217027"
+  },
+  {
+    "site": "eBay",
+    "price": "$16.48",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217028"
+  },
+  {
+    "site": "eBay",
+    "price": "$139.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217029"
+  },
+  {
+    "site": "eBay",
+    "price": "$20.86",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217029"
+  },
+  {
+    "site": "eBay",
+    "price": "$1,049.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217030"
+  },
+  {
+    "site": "eBay",
+    "price": "$264.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217031"
+  },
+  {
+    "site": "eBay",
+    "price": "$259.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217032"
+  },
+  {
+    "site": "eBay",
+    "price": "$249.95",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217034"
+  },
+  {
+    "site": "eBay",
+    "price": "$379.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217035"
+  },
+  {
+    "site": "eBay",
+    "price": "$109.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217035"
+  },
+  {
+    "site": "eBay",
+    "price": "$220.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217036"
+  },
+  {
+    "site": "eBay",
+    "price": "$629.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217037"
+  },
+  {
+    "site": "eBay",
+    "price": "$449.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217038"
+  },
+  {
+    "site": "eBay",
+    "price": "$279.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217039"
+  },
+  {
+    "site": "eBay",
+    "price": "$15.95",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217040"
+  },
+  {
+    "site": "eBay",
+    "price": "$339.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217041"
+  },
+  {
+    "site": "eBay",
+    "price": "$15",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217042"
+  },
+  {
+    "site": "eBay",
+    "price": "$50",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217043"
+  },
+  {
+    "site": "eBay",
+    "price": "$474.98",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217043"
+  },
+  {
+    "site": "eBay",
+    "price": "$27.08",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217044"
+  },
+  {
+    "site": "eBay",
+    "price": "$356.74",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217045"
+  },
+  {
+    "site": "eBay",
+    "price": "$677.81",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217046"
+  },
+  {
+    "site": "eBay",
+    "price": "$161.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217047"
+  },
+  {
+    "site": "eBay",
+    "price": "$34.16",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217048"
+  },
+  {
+    "site": "eBay",
+    "price": "$134.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217048"
+  },
+  {
+    "site": "eBay",
+    "price": "$69.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217049"
+  },
+  {
+    "site": "eBay",
+    "price": "$132.30",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217050"
+  },
+  {
+    "site": "eBay",
+    "price": "$199.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217051"
+  },
+  {
+    "site": "eBay",
+    "price": "$99.66",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217052"
+  },
+  {
+    "site": "eBay",
+    "price": "$249.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217052"
+  },
+  {
+    "site": "eBay",
+    "price": "$22.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217054"
+  },
+  {
+    "site": "eBay",
+    "price": "$450.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217055"
+  },
+  {
+    "site": "eBay",
+    "price": "$229.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217055"
+  },
+  {
+    "site": "eBay",
+    "price": "$315.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217056"
+  },
+  {
+    "site": "eBay",
+    "price": "$129.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217059"
+  },
+  {
+    "site": "eBay",
+    "price": "$269.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217060"
+  },
+  {
+    "site": "eBay",
+    "price": "$239.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217061"
+  },
+  {
+    "site": "eBay",
+    "price": "$15.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217062"
+  },
+  {
+    "site": "eBay",
+    "price": "$144.50",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217063"
+  },
+  {
+    "site": "eBay",
+    "price": "$99.99",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217064"
+  },
+  {
+    "site": "eBay",
+    "price": "$86.95",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217065"
+  },
+  {
+    "site": "eBay",
+    "price": "$110.24",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217065"
+  },
+  {
+    "site": "eBay",
+    "price": "$322.05",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217068"
+  },
+  {
+    "site": "eBay",
+    "price": "$15.79",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217069"
+  },
+  {
+    "site": "eBay",
+    "price": "$399.66",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217070"
+  },
+  {
+    "site": "eBay",
+    "price": "$759.35",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217071"
+  },
+  {
+    "site": "eBay",
+    "price": "$106.50",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217072"
+  },
+  {
+    "site": "eBay",
+    "price": "$103.64",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217073"
+  },
+  {
+    "site": "eBay",
+    "price": "$125.00",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217074"
+  },
+  {
+    "site": "eBay",
+    "price": "$465.10",
+    "url": "https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum",
+    "timestamp": "2026-02-26T01:07:03.217075"
+  }
+    ];
+
+    function buildPricedUrl(site, price) {
+      const num = parseFloat(price.replace(/[$,]/g, ""));
+      const min = Math.floor(num);
+      const max = Math.ceil(num);
+      if (site === "Target") {
+        return `https://www.target.com/s?searchTerm=dyson+vacuum&minPrice=${min}&maxPrice=${max}`;
+      } else if (site === "eBay") {
+        return `https://www.ebay.com/sch/i.html?_nkw=dyson+vacuum&_udlo=${min}&_udhi=${max}`;
+      } else if (site === "Best Buy") {
+        return `https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum&price=${min}-${max}`;
+      } else if (site === "Walmart") {
+        return `https://www.walmart.com/search?q=dyson+vacuum&minPrice=${min}&maxPrice=${max}`;
+      }
+      return `https://www.google.com/search?q=dyson+vacuum+${encodeURIComponent(price)}`;
+    }
+
+    function render() {
+      const site = document.getElementById("siteFilter").value;
+      const sort = document.getElementById("sortFilter").value;
+
+      let filtered = site === "all" ? [...data] : data.filter(d => d.site === site);
+
+      if (sort === "asc") filtered.sort((a, b) => parseFloat(a.price.replace(/[$,]/g, "")) - parseFloat(b.price.replace(/[$,]/g, "")));
+      else if (sort === "desc") filtered.sort((a, b) => parseFloat(b.price.replace(/[$,]/g, "")) - parseFloat(a.price.replace(/[$,]/g, "")));
+      else filtered.sort((a, b) => a.site.localeCompare(b.site));
+
+      const body = document.getElementById("tableBody");
+      body.innerHTML = filtered.map(item => `
+        <tr>
+          <td class="site-${item.site.toLowerCase().replace(" ", "")}">${item.site}</td>
+          <td class="price">${item.price}</td>
+          <td><a href="${buildPricedUrl(item.site, item.price)}" target="_blank">View →</a></td>
+          <td>${new Date(item.timestamp).toLocaleString()}</td>
+        </tr>
+      `).join("");
+
+      document.getElementById("status").textContent = `Showing ${filtered.length} prices`;
+    }
+  </script>
+</body>
+</html>
