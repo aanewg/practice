@@ -60,7 +60,8 @@
       })
       .catch(error => {
         console.error("Error loading prices.json:", error);
-        document.getElementById("status").textContent = "Error: Could not load prices.json";
+        data = fallbackData;
+        render();
       });
 
     const fallbackData = [
