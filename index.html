@@ -1076,7 +1076,7 @@
         <tr>
           <td class="site-${item.site.toLowerCase().replace(" ", "")}">${item.site}</td>
           <td class="price">${item.price}</td>
-          <td><a href="${buildPricedUrl(item.site, item.price)}" target="_blank">View →</a></td>
+          <td><a href="${item.url}" target="_blank">View →</a></td>
           <td>${new Date(item.timestamp).toLocaleString()}</td>
         </tr>
       `).join("");
