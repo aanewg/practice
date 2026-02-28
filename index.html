@@ -22,6 +22,7 @@
     .site-bestbuy { color: #0046be; font-weight: bold; }
     .site-walmart { color: #0071ce; font-weight: bold; }
     .price { color: #2d8a4e; font-weight: bold; font-size: 1.1em; }
+    .product-name { max-width: 300px; font-size: 0.9em; color: #333; }
   </style>
 </head>
 <body>
@@ -43,7 +44,7 @@
   <div id="status"></div>
   <table>
     <thead>
-      <tr><th>Site</th><th>Price</th><th>Link</th><th>Scraped At</th></tr>
+      <tr><th>Site</th><th>Product</th><th>Price</th><th>Link</th><th>Scraped At</th></tr>
     </thead>
     <tbody id="tableBody"></tbody>
   </table>
@@ -1075,6 +1076,7 @@
       body.innerHTML = filtered.map(item => `
         <tr>
           <td class="site-${item.site.toLowerCase().replace(" ", "")}">${item.site}</td>
+          <td class="product-name">${item.name || ""}</td>
           <td class="price">${item.price}</td>
           <td><a href="${item.url}" target="_blank">View →</a></td>
           <td>${new Date(item.timestamp).toLocaleString()}</td>

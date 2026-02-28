@@ -39,11 +39,18 @@ def scrape_target():
             for _ in range(5):  # walk up 5 levels
                 if parent is None:
                     break
-                price_match = re.search(r'\$\d+\.?\d*', parent.get_text())
+                price_match = re.search(r'\$[\d,]+\.?\d*', parent.get_text())
                 if price_match:
                     price = price_match.group()
                     break
                 parent = parent.parent
+
+            # Skip non-Dyson products, toys, protection plans, and non-vacuum items
+            name_lower = name.lower()
+            if "dyson" not in name_lower:
+                continue
+            if any(skip in name_lower for skip in ["toy", "protection plan", "allstate", "stars with", "ratings"]):
+                continue
 
             results.append({
                 "site": "Target",
