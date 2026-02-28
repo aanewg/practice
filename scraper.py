@@ -1,8 +1,12 @@
 import re
 import json
+import random
 from datetime import datetime
 from playwright.sync_api import sync_playwright
+from playwright_stealth import Stealth
 from bs4 import BeautifulSoup
+
+CHROME_PATH = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 
 results = []
 
@@ -91,40 +95,79 @@ def scrape_ebay():
 def scrape_bestbuy():
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=True,
+            executable_path=CHROME_PATH,
+            headless=False,
             args=["--disable-blink-features=AutomationControlled"]
         )
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport={"width": 1280, "height": 800}
+            viewport={"width": 1280, "height": 900},
+            locale="en-US",
+            timezone_id="America/New_York",
+            extra_http_headers={"Accept-Language": "en-US,en;q=0.9"},
+            no_viewport=False,
         )
         page = context.new_page()
-        page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        Stealth().use_sync(page)
         print("Scraping Best Buy...")
+
+        # Land on homepage first like a real user
+        page.goto("https://www.bestbuy.com", timeout=60000, wait_until="domcontentloaded")
+        page.wait_for_timeout(random.randint(1500, 2500))
+
+        # Move mouse around naturally before navigating
+        page.mouse.move(random.randint(200, 800), random.randint(100, 400))
+        page.wait_for_timeout(random.randint(400, 800))
+
+        # Navigate to search results
         page.goto("https://www.bestbuy.com/site/searchpage.jsp?st=dyson+vacuum", timeout=90000, wait_until="domcontentloaded")
+
+        # Wait for real product cards (not skeleton placeholders)
         try:
-            page.wait_for_selector(".sku-item", timeout=20000)
+            page.wait_for_function(
+                "document.querySelectorAll(\"a[href*='bestbuy.com/product']\").length >= 10",
+                timeout=30000
+            )
         except:
             pass
-        page.wait_for_timeout(5000)
+
+        # Scroll slowly like a human reading results
+        for _ in range(10):
+            page.mouse.move(random.randint(300, 900), random.randint(200, 700))
+            page.evaluate(f"window.scrollBy(0, {random.randint(300, 600)})")
+            page.wait_for_timeout(random.randint(500, 1000))
+
+        # Final wait for any late-loading cards
+        try:
+            page.wait_for_function(
+                "document.querySelectorAll(\"a[href*='bestbuy.com/product']\").length >= 20",
+                timeout=10000
+            )
+        except:
+            pass
+        page.wait_for_timeout(2000)
+
         soup = BeautifulSoup(page.content(), "html.parser")
         browser.close()
 
-        cards = soup.select(".product-list-item")
-        for card in cards:
-            link_tags = card.select("a[href*='bestbuy.com/product']")
-            name = next((a.get_text(strip=True) for a in link_tags if a.get_text(strip=True)), None)
-            href = link_tags[0].get("href") if link_tags else None
-            price_match = re.search(r'\$[\d,]+\.?\d*', card.get_text())
-            price = price_match.group() if price_match else "See site"
-            if name and href:
-                results.append({
-                    "site": "Best Buy",
-                    "name": name[:80],
-                    "price": price,
-                    "url": href,
-                    "timestamp": datetime.now().isoformat()
-                })
+    seen = set()
+    cards = soup.select(".product-list-item")
+    for card in cards:
+        link_tags = card.select("a[href*='bestbuy.com/product']")
+        name = next((a.get_text(strip=True) for a in link_tags if a.get_text(strip=True)), None)
+        href = link_tags[0].get("href") if link_tags else None
+        if not href or href in seen:
+            continue
+        seen.add(href)
+        price_match = re.search(r'\$[\d,]+\.?\d*', card.get_text())
+        price = price_match.group() if price_match else "See site"
+        if name and href:
+            results.append({
+                "site": "Best Buy",
+                "name": name[:80],
+                "price": price,
+                "url": href,
+                "timestamp": datetime.now().isoformat()
+            })
 
 def run_all():
     global results
