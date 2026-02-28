@@ -3,51 +3,136 @@
 <head>
   <meta charset="UTF-8">
   <title>Dyson Price Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 30px; }
-    h1 { color: #222; margin-bottom: 20px; }
-    .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-    select, button { padding: 10px 16px; border-radius: 6px; font-size: 1em; border: 1px solid #ccc; }
-    button { background: #0078d4; color: white; border: none; cursor: pointer; }
-    button:hover { background: #005fa3; }
-    #status { margin-bottom: 15px; color: #555; }
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    th { background: #0078d4; color: white; padding: 12px 16px; text-align: left; }
-    td { padding: 12px 16px; border-bottom: 1px solid #eee; }
+    body { font-family: 'Inter', Arial, sans-serif; background: #f1f5f9; min-height: 100vh; }
+
+    /* Header */
+    .header { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: white; padding: 36px 40px 32px; }
+    .header h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .header p { font-size: 0.95rem; opacity: 0.75; }
+
+    /* Main content */
+    .container { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+
+    /* Stats bar */
+    .stats { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .stat-card { background: white; border-radius: 10px; padding: 16px 22px; flex: 1; min-width: 140px;
+                 box-shadow: 0 1px 4px rgba(0,0,0,0.07); border-left: 4px solid #6366f1; }
+    .stat-card .label { font-size: 0.75rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .stat-card .value { font-size: 1.4rem; font-weight: 700; color: #1e293b; }
+    .stat-card:nth-child(2) { border-left-color: #10b981; }
+    .stat-card:nth-child(3) { border-left-color: #f59e0b; }
+    .stat-card:nth-child(4) { border-left-color: #ef4444; }
+
+    /* Controls */
+    .controls { background: white; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.07); display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap input { width: 100%; padding: 9px 14px 9px 36px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+                         font-size: 0.9rem; font-family: inherit; outline: none; transition: border-color 0.15s; }
+    .search-wrap input:focus { border-color: #6366f1; }
+    .search-wrap .icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 1rem; }
+    select { padding: 9px 14px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem;
+             font-family: inherit; background: white; outline: none; cursor: pointer; color: #374151; transition: border-color 0.15s; }
+    select:focus { border-color: #6366f1; }
+    .price-range { display: flex; align-items: center; gap: 8px; }
+    .price-range input { width: 90px; padding: 9px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+                         font-size: 0.9rem; font-family: inherit; outline: none; transition: border-color 0.15s; }
+    .price-range input:focus { border-color: #6366f1; }
+    .price-range span { color: #94a3b8; font-size: 0.85rem; }
+
+    /* Result count */
+    #status { color: #64748b; font-size: 0.85rem; margin-bottom: 12px; padding-left: 2px; }
+
+    /* Table */
+    .table-wrap { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f8fafc; color: #475569; font-size: 0.78rem; font-weight: 600; text-transform: uppercase;
+         letter-spacing: 0.06em; padding: 13px 18px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 14px 18px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #f9f9f9; }
-    .site-target { color: #cc0000; font-weight: bold; }
-    .site-ebay { color: #e53238; font-weight: bold; }
-    .site-bestbuy { color: #0046be; font-weight: bold; }
-    .site-walmart { color: #0071ce; font-weight: bold; }
-    .price { color: #2d8a4e; font-weight: bold; font-size: 1.1em; }
-    .product-name { max-width: 300px; font-size: 0.9em; color: #333; }
+    tbody tr:hover td { background: #f8fafc; }
+
+    /* Site badges */
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .badge-target  { background: #fee2e2; color: #b91c1c; }
+    .badge-ebay    { background: #fef3c7; color: #b45309; }
+    .badge-bestbuy { background: #dbeafe; color: #1d4ed8; }
+    .badge-walmart { background: #d1fae5; color: #065f46; }
+
+    /* Product name */
+    .product-name { font-size: 0.88rem; color: #374151; max-width: 320px; line-height: 1.4; }
+
+    /* Price */
+    .price { font-weight: 700; font-size: 1.05rem; color: #059669; white-space: nowrap; }
+
+    /* View button */
+    .view-btn { display: inline-block; padding: 6px 14px; background: #6366f1; color: white;
+                border-radius: 7px; font-size: 0.82rem; font-weight: 500; text-decoration: none;
+                transition: background 0.15s, transform 0.1s; white-space: nowrap; }
+    .view-btn:hover { background: #4f46e5; transform: translateY(-1px); }
+
+    /* No results */
+    .no-results { text-align: center; padding: 60px 20px; color: #94a3b8; font-size: 1rem; }
+
+    @media (max-width: 700px) {
+      .header { padding: 24px 20px; }
+      .container { padding: 16px; }
+      th:nth-child(5), td:nth-child(5) { display: none; }
+      .price-range { display: none; }
+    }
   </style>
 </head>
 <body>
-  <h1>🧹 Dyson Vacuum Price Tracker</h1>
-  <div class="controls">
-    <select id="siteFilter" onchange="render()">
-      <option value="all">All Sites</option>
-      <option value="Target">Target</option>
-      <option value="eBay">eBay</option>
-      <option value="Best Buy">Best Buy</option>
-      <option value="Walmart">Walmart</option>
-    </select>
-    <select id="sortFilter" onchange="render()">
-      <option value="asc">Price: Low to High</option>
-      <option value="desc">Price: High to Low</option>
-      <option value="site">Sort by Site</option>
-    </select>
+  <div class="header">
+    <h1>Dyson Vacuum Price Tracker</h1>
+    <p>Live prices scraped from Target, eBay, and Best Buy</p>
   </div>
-  <div id="status"></div>
-  <table>
-    <thead>
-      <tr><th>Site</th><th>Product</th><th>Price</th><th>Link</th><th>Scraped At</th></tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+
+  <div class="container">
+    <div class="stats">
+      <div class="stat-card"><div class="label">Total Listings</div><div class="value" id="statCount">—</div></div>
+      <div class="stat-card"><div class="label">Lowest Price</div><div class="value" id="statLow">—</div></div>
+      <div class="stat-card"><div class="label">Highest Price</div><div class="value" id="statHigh">—</div></div>
+      <div class="stat-card"><div class="label">Avg Price</div><div class="value" id="statAvg">—</div></div>
+    </div>
+
+    <div class="controls">
+      <div class="search-wrap">
+        <span class="icon">&#128269;</span>
+        <input id="searchInput" type="text" placeholder="Search products..." oninput="render()">
+      </div>
+      <select id="siteFilter" onchange="render()">
+        <option value="all">All Sites</option>
+        <option value="Target">Target</option>
+        <option value="eBay">eBay</option>
+        <option value="Best Buy">Best Buy</option>
+      </select>
+      <select id="sortFilter" onchange="render()">
+        <option value="asc">Price: Low to High</option>
+        <option value="desc">Price: High to Low</option>
+        <option value="site">Sort by Site</option>
+      </select>
+      <div class="price-range">
+        <input id="minPrice" type="number" placeholder="Min $" oninput="render()">
+        <span>—</span>
+        <input id="maxPrice" type="number" placeholder="Max $" oninput="render()">
+      </div>
+    </div>
+
+    <div id="status"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Site</th><th>Product</th><th>Price</th><th>Link</th><th>Last Updated</th></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
 
   <script>
     let data = [];
@@ -1062,28 +1147,54 @@
       return `https://www.google.com/search?q=dyson+vacuum+${encodeURIComponent(price)}`;
     }
 
+    function parsePrice(p) {
+      return parseFloat((p || "0").replace(/[$,]/g, "")) || 0;
+    }
+
     function render() {
       const site = document.getElementById("siteFilter").value;
       const sort = document.getElementById("sortFilter").value;
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const minP = parseFloat(document.getElementById("minPrice").value) || 0;
+      const maxP = parseFloat(document.getElementById("maxPrice").value) || Infinity;
 
-      let filtered = site === "all" ? [...data] : data.filter(d => d.site === site);
+      let filtered = data.filter(d => {
+        if (site !== "all" && d.site !== site) return false;
+        if (search && !(d.name || "").toLowerCase().includes(search)) return false;
+        const p = parsePrice(d.price);
+        if (p < minP || p > maxP) return false;
+        return true;
+      });
 
-      if (sort === "asc") filtered.sort((a, b) => parseFloat(a.price.replace(/[$,]/g, "")) - parseFloat(b.price.replace(/[$,]/g, "")));
-      else if (sort === "desc") filtered.sort((a, b) => parseFloat(b.price.replace(/[$,]/g, "")) - parseFloat(a.price.replace(/[$,]/g, "")));
+      if (sort === "asc") filtered.sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
+      else if (sort === "desc") filtered.sort((a, b) => parsePrice(b.price) - parsePrice(a.price));
       else filtered.sort((a, b) => a.site.localeCompare(b.site));
 
-      const body = document.getElementById("tableBody");
-      body.innerHTML = filtered.map(item => `
-        <tr>
-          <td class="site-${item.site.toLowerCase().replace(" ", "")}">${item.site}</td>
-          <td class="product-name">${item.name || ""}</td>
-          <td class="price">${item.price}</td>
-          <td><a href="${item.url}" target="_blank">View →</a></td>
-          <td>${new Date(item.timestamp).toLocaleString()}</td>
-        </tr>
-      `).join("");
+      // Update stats
+      const prices = filtered.map(d => parsePrice(d.price)).filter(p => p > 0);
+      document.getElementById("statCount").textContent = filtered.length;
+      document.getElementById("statLow").textContent = prices.length ? "$" + Math.min(...prices).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "—";
+      document.getElementById("statHigh").textContent = prices.length ? "$" + Math.max(...prices).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "—";
+      document.getElementById("statAvg").textContent = prices.length ? "$" + (prices.reduce((a,b) => a+b, 0) / prices.length).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "—";
 
-      document.getElementById("status").textContent = `Showing ${filtered.length} prices`;
+      const siteKey = s => s.toLowerCase().replace(/\s+/g, "");
+      const body = document.getElementById("tableBody");
+
+      if (filtered.length === 0) {
+        body.innerHTML = `<tr><td colspan="5" class="no-results">No results found. Try adjusting your filters.</td></tr>`;
+      } else {
+        body.innerHTML = filtered.map(item => `
+          <tr>
+            <td><span class="badge badge-${siteKey(item.site)}">${item.site}</span></td>
+            <td class="product-name">${item.name || "—"}</td>
+            <td class="price">${item.price}</td>
+            <td><a class="view-btn" href="${item.url}" target="_blank">View &rarr;</a></td>
+            <td style="color:#94a3b8;font-size:0.82rem">${new Date(item.timestamp).toLocaleDateString()}</td>
+          </tr>
+        `).join("");
+      }
+
+      document.getElementById("status").textContent = `Showing ${filtered.length} of ${data.length} listings`;
     }
   </script>
 </body>
